@@ -30,9 +30,11 @@ initial
     @( posedge clk );
     rst <= 1'b0;
 
+    en <= 1'b0;
+    @( posedge clk );
     en <= 1'b1;
 
-    repeat( 2200*1125 + 100 )
+    repeat( 2200*1125 + 1000 )
       @( posedge clk );
 
     $stop();

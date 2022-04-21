@@ -24,20 +24,23 @@ localparam V_SYNC_CNT_W = $clog2( V_TOTAL );
 // Variables declaration
 //******************************************************************************
 
-logic [7:0] r_pix_value_cnt;
-logic [7:0] g_pix_value_cnt;
-logic [7:0] b_pix_value_cnt;
+logic [7:0]               r_pix_value_cnt;
+logic [7:0]               g_pix_value_cnt;
+logic [7:0]               b_pix_value_cnt;
 
-logic         vsync;
-logic         vsync_start;
-logic         vsync_end;
-logic         hsync;
-logic         hsync_start_stb;
-logic         hsync_end_stb;
-logic         de;
-logic         de_enable;
+logic                     vsync;
+logic                     vsync_start;
+logic                     vsync_end;
+logic                     hsync;
+logic                     hsync_start_stb;
+logic                     hsync_end_stb;
+logic                     de;
+logic                     de_enable;
 
-logic [23:0]  data;
+logic [H_SYNC_CNT_W-1:0]  hsync_cnt;
+logic [V_SYNC_CNT_W-1:0]  vsync_cnt;
+
+logic [23:0]              data;
 
 //******************************************************************************
 // Frame pixel value control
@@ -87,7 +90,7 @@ always_ff @( posedge clk_i, posedge rst_i )
     vsync <= 1'b0;
   else
     if( en_i )
-      vsync <= ( vsync <= V_SYNC-1 );
+      vsync <= ( vsync_cnt <= V_SYNC-1 );
     else
       vsync <= 1'b0;
 
@@ -113,7 +116,7 @@ always_ff @( posedge clk_i, posedge rst_i )
     hsync <= 1'b0;
   else
     if( en_i )
-      hsync <= ( hsync <= H_SYNC-1 );
+      hsync <= ( hsync_cnt <= H_SYNC-1 );
     else
       hsync <= 1'b0;
 

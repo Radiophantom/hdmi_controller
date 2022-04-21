@@ -1,7 +1,7 @@
 vlib work
 
-vlog -sv ../hdmi_controller.sv \
-         ../hdmi_controller_pkg.sv \
+vlog -sv ../hdmi_controller_pkg.sv \
+         ../hdmi_controller.sv \
          top_tb.sv
 
 vopt +acc -o top_tb_opt top_tb
