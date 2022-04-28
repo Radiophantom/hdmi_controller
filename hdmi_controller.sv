@@ -6,6 +6,8 @@ module hdmi_controller(
 
   input         en_i,
 
+  //avalon_st_if  pixel_data_if,
+
   output        vsync_o,
   output        hsync_o,
   output        de_o,
@@ -28,6 +30,8 @@ logic [7:0]               r_pix_value_cnt;
 logic [7:0]               g_pix_value_cnt;
 logic [7:0]               b_pix_value_cnt;
 
+logic                     en_d;
+
 logic                     vsync;
 logic                     vsync_start;
 logic                     vsync_end;
@@ -46,6 +50,9 @@ logic [23:0]              data;
 // Frame pixel value control
 //******************************************************************************
 
+always_ff @( posedge clk_i )
+  en_d <= en_i;
+
 always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     begin
@@ -54,22 +61,24 @@ always_ff @( posedge clk_i, posedge rst_i )
       b_pix_value_cnt <= '0;
     end
   else
-    if( en_i )
+    if( en_d )
       begin
         if( vsync_end && hsync_end_stb )
           begin
-            r_pix_value_cnt <= { r_pix_value_cnt[6:0], r_pix_value_cnt[5]^r_pix_value_cnt[3] };
-            g_pix_value_cnt <= { g_pix_value_cnt[6:0], g_pix_value_cnt[5]^g_pix_value_cnt[3] };
-            b_pix_value_cnt <= { b_pix_value_cnt[6:0], b_pix_value_cnt[5]^b_pix_value_cnt[3] };
+            r_pix_value_cnt <= '0;
+            g_pix_value_cnt <= '0;
+            b_pix_value_cnt <= '0;
           end
+        else
+          if( de_enable )
+            begin
+              b_pix_value_cnt <= b_pix_value_cnt + 1'b1;
+              if( b_pix_value_cnt == 8'hFF )
+                g_pix_value_cnt <= g_pix_value_cnt + 1'b1;
+              if( b_pix_value_cnt == 8'hFF && g_pix_value_cnt == 8'hFF )
+                r_pix_value_cnt <= r_pix_value_cnt + 1'b1;
+            end
       end
-    else
-      begin
-        r_pix_value_cnt <= 8'hAA;
-        g_pix_value_cnt <= 8'hFF;
-        b_pix_value_cnt <= 8'h55;
-      end
-
 
 //******************************************************************************
 // VSYNC generation
@@ -79,7 +88,7 @@ always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     vsync_cnt <= '0;
   else
-    if( en_i && hsync_end_stb )
+    if( en_d && hsync_end_stb )
       if( vsync_cnt == V_TOTAL-1 )
         vsync_cnt <= '0;
       else
@@ -89,7 +98,7 @@ always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     vsync <= 1'b0;
   else
-    if( en_i )
+    if( en_d )
       vsync <= ( vsync_cnt <= V_SYNC-1 );
     else
       vsync <= 1'b0;
@@ -105,7 +114,7 @@ always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     hsync_cnt <= '0;
   else
-    if( en_i )
+    if( en_d )
       if( hsync_cnt == H_TOTAL-1 )
         hsync_cnt <= '0;
       else
@@ -115,7 +124,7 @@ always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     hsync <= 1'b0;
   else
-    if( en_i )
+    if( en_d )
       hsync <= ( hsync_cnt <= H_SYNC-1 );
     else
       hsync <= 1'b0;
@@ -134,8 +143,8 @@ always_ff @( posedge clk_i, posedge rst_i )
   if( rst_i )
     de <= 1'b0;
   else
-    if( en_i )
-      de <= de_enable;
+    if( en_d )
+      de <= de_enable; // && pixel_data_if.valid;
     else
       de <= 1'b0;
 
@@ -145,7 +154,10 @@ always_ff @( posedge clk_i, posedge rst_i )
 
 always_ff @( posedge clk_i )
   if( de_enable )
+    //data <= pixel_data_if.data;
     data <= { r_pix_value_cnt, g_pix_value_cnt, b_pix_value_cnt };
+
+//assign pixel_data_if.ready = de_enable;
 
 //******************************************************************************
 // Assign outputs
