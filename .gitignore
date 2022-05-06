@@ -1,5 +1,5 @@
 *.swp
 tags
-tb/transcript
-tb/vsim.wlf
-tb/work/
+transcript
+vsim.wlf
+work/
